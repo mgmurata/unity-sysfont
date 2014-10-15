@@ -155,6 +155,13 @@ To add a UISysFontLabel widget to your scene access the menu
 Here is a screenshot of unity-sysfont-ngui.
 ![NGUI](https://github.com/downloads/imkira/unity-sysfont/unity-sysfont_ngui-clipping.jpg)
 
+## EzGUI Compatibility
+
+If you wish to use unity-sysfont text with clipping support.
+
+To add a UISysFontText Component to your scene access the menu
+```Component -> EZ GUI -> Controls -> SysFont Text```.
+
 ## Known Problems
 
 On the Unity Editor, sometimes the contents of the textures that are used for
