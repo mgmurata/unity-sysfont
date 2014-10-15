@@ -162,6 +162,8 @@ If you wish to use unity-sysfont text with clipping support.
 To add a UISysFontText Component to your scene access the menu
 ```Component -> EZ GUI -> Controls -> SysFont Text```.
 
+Preview Version, Seldom testing. 
+
 ## Known Problems
 
 On the Unity Editor, sometimes the contents of the textures that are used for
