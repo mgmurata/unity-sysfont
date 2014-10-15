@@ -3,8 +3,13 @@
 #include <gl/gl.h>
 #include <gl/glu.h>
 
+//#define	OUTPUT_BMP
+
 #pragma comment(lib, "opengl32")
 #pragma comment(lib, "glu32")
+#ifdef OUTPUT_BMP
+BOOL SaveToBitmapFile(HDC hDC, LPCTSTR lpszFileName);
+#endif	// OUTPUT_BMP
 
 static const int BUFFER_SIZE = 1024;
 static wchar_t buffer[BUFFER_SIZE];
@@ -43,6 +48,9 @@ static int drawTextFlag = DT_WORDBREAK;
 static const int INFO_SIZE = sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD)*256;
 static char bitmapInfo[INFO_SIZE];
 static bool isBitmapInfoOk = false;
+#ifdef OUTPUT_BMP
+//static bool bSave_ = false;
+#endif	// OUTPUT_BMP
 
 void TextureUpdate::render() 
 {
@@ -88,6 +96,14 @@ void TextureUpdate::render()
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA8, textureWidth, textureHeight, 0, GL_ALPHA, GL_UNSIGNED_BYTE, data);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+#ifdef OUTPUT_BMP
+if(!bSave_){
+	SaveToBitmapFile(dc, L"aaaa.bmp");
+	bSave_ = true;
+}
+#endif	// OUTPUT_BMP
 }
 
 HFONT TextureUpdate::getFont() 
@@ -168,3 +184,166 @@ void TextureUpdate::prepare()
 	textureHeight = getNextPowerOfTwo(textHeight);
 
 }
+
+#ifdef OUTPUT_BMP
+// --------------------------------------------------
+// メモリに描画した内容をビットマップに出力する
+// 引数   : HDC     - デバイスコンテキストのハンドル
+//          LPCTSTR - 出力するファイル名
+// 戻り値 : BOOL
+//          ビットマップ出力が成功すれば[TRUE]を返す
+//          ビットマップ出力が失敗すれば[FALSE]を返す
+// --------------------------------------------------
+BOOL SaveToBitmapFile(HDC hDC, LPCTSTR lpszFileName)
+{
+    int errorCode = 0;  // エラーチェック変数
+
+    HBITMAP hBmp = (HBITMAP)GetCurrentObject(hDC, OBJ_BITMAP);  // 現在選択されているビットマップを取得する
+    if(hBmp == NULL)
+        return FALSE;  // GetCurrentObject() がエラー
+
+    BITMAPINFO  sBmpInfo;  // BITMAPINFO 構造体、Windows のデバイスに依存しないビットマップ (DIB) の寸法と色の情報を定義する
+    sBmpInfo.bmiHeader.biSize = sizeof(sBmpInfo.bmiHeader);
+    sBmpInfo.bmiHeader.biBitCount = 0;
+    errorCode = GetDIBits(hDC, hBmp, 0, 0, NULL, &sBmpInfo, DIB_RGB_COLORS);  // 指定されたビットマップのビットを取得し、指定された形式でバッファにコピーする
+    if(errorCode == 0)
+        return FALSE;  // GetDIBits() がエラー
+
+    ULONG iBmpInfoSize;
+    switch(sBmpInfo.bmiHeader.biBitCount)  // 1ピクセルのカラービット数を判別する
+    {
+        case 24:  // 1677万色(true color)ビットマップ
+            iBmpInfoSize = sizeof(BITMAPINFOHEADER);
+            break;
+        case 16:  // 65536色(high color)ビットマップ
+        case 32:  // 1677万色+α(true color)ビットマップ
+            iBmpInfoSize = sizeof(BITMAPINFOHEADER) + sizeof(DWORD) * 3;
+            break;
+        default:
+            iBmpInfoSize = sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * (1 << sBmpInfo.bmiHeader.biBitCount);
+            break;
+    }
+
+    PBITMAPINFO psBmpInfo = &sBmpInfo;
+    if(iBmpInfoSize != sizeof(BITMAPINFOHEADER))
+    {
+        psBmpInfo = (PBITMAPINFO)GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, iBmpInfoSize);  // ヒープから指定されたバイト数のメモリを確保する
+        if(psBmpInfo == NULL)
+            return FALSE;  // GlobalAlloc() がエラー
+        PBYTE pbtBmpInfoDest = (PBYTE)psBmpInfo;
+        PBYTE pbtBmpInfoSrc = (PBYTE)&sBmpInfo;
+        ULONG iSizeTmp = sizeof(BITMAPINFOHEADER);
+
+        // ビットマップデータを複製する
+        while(iSizeTmp--)
+        {
+            *pbtBmpInfoDest = *pbtBmpInfoSrc;
+            pbtBmpInfoDest++;
+            pbtBmpInfoSrc++;
+        }
+    }
+
+    // ビットマップファイルの作成
+    HANDLE hFile = CreateFile(lpszFileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_ARCHIVE, NULL);
+    if(hFile == INVALID_HANDLE_VALUE)
+    {
+        if(psBmpInfo != NULL)
+            GlobalFree(psBmpInfo);
+        return FALSE;  // CreateFile() がエラー
+    }
+
+    BITMAPFILEHEADER sBmpFileHder;
+    sBmpFileHder.bfType = MAKEWORD('B', 'M');  // 'BM' 16-bit 整数を作成する(DIB形式のファイル)
+    sBmpFileHder.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + iBmpInfoSize + psBmpInfo->bmiHeader.biSizeImage;
+    sBmpFileHder.bfReserved1 = 0;
+    sBmpFileHder.bfReserved2 = 0;
+    sBmpFileHder.bfOffBits = sizeof(BITMAPFILEHEADER) + iBmpInfoSize;
+
+    DWORD dwRet;
+    errorCode = WriteFile(hFile, (LPCVOID)&sBmpFileHder, sizeof(BITMAPFILEHEADER), &dwRet, NULL);
+    if(errorCode == 0)
+    {
+        CloseHandle(hFile);
+        if(psBmpInfo != NULL)
+            GlobalFree(psBmpInfo);
+        return FALSE;  // WriteFile() がエラー
+    }
+
+    PBYTE pBits = (PBYTE)GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, sBmpInfo.bmiHeader.biSizeImage);
+    if(pBits == NULL)
+    {
+        CloseHandle(hFile);
+        if(psBmpInfo != NULL)
+            GlobalFree(psBmpInfo);
+        return FALSE;  // GlobalAlloc() がエラー
+    }
+
+    // ビットマップを作成する
+    HBITMAP hTmpBmp = CreateCompatibleBitmap(hDC, psBmpInfo->bmiHeader.biWidth, psBmpInfo->bmiHeader.biHeight);
+    if(hTmpBmp == NULL)
+    {
+        CloseHandle(hFile);
+        if(psBmpInfo != NULL)
+            GlobalFree(psBmpInfo);
+        if(pBits != NULL)
+            GlobalFree(pBits);
+        return FALSE;  // CreateCompatibleBitmap() がエラー
+    }
+    HBITMAP hOldBmp = (HBITMAP)SelectObject(hDC, hTmpBmp);
+    if(hOldBmp == NULL)
+    {
+        CloseHandle(hFile);
+        if(psBmpInfo != NULL)
+            GlobalFree(psBmpInfo);
+        if(pBits != NULL)
+            GlobalFree(pBits);
+        return FALSE;  // SelectObject() がエラー
+    }
+    errorCode = GetDIBits(hDC, hBmp, 0, psBmpInfo->bmiHeader.biHeight, (LPSTR)pBits, psBmpInfo, DIB_RGB_COLORS);
+    if(errorCode == 0)
+    {
+        SelectObject(hDC, hOldBmp);
+        DeleteObject(hTmpBmp);
+        CloseHandle(hFile);
+        if(psBmpInfo != NULL)
+            GlobalFree(psBmpInfo);
+        if(pBits != NULL)
+            GlobalFree(pBits);
+        return FALSE;  // GetDIBits() がエラー
+    }
+
+    errorCode = WriteFile(hFile, (LPCVOID)psBmpInfo, iBmpInfoSize, &dwRet, NULL);
+    if(errorCode == 0)
+    {
+        SelectObject(hDC, hOldBmp);
+        DeleteObject(hTmpBmp);
+        CloseHandle(hFile);
+        if(psBmpInfo != NULL)
+            GlobalFree(psBmpInfo);
+        if(pBits != NULL)
+            GlobalFree(pBits);
+        return FALSE;  // WriteFile() がエラー
+    }
+
+    errorCode = WriteFile(hFile, (LPCVOID)pBits, psBmpInfo->bmiHeader.biSizeImage, &dwRet, NULL);
+    if(errorCode == 0)
+    {
+        SelectObject(hDC, hOldBmp);
+        DeleteObject(hTmpBmp);
+        CloseHandle(hFile);
+        if(psBmpInfo != NULL)
+            GlobalFree(psBmpInfo);
+        if(pBits != NULL)
+            GlobalFree(pBits);
+        return FALSE;  // WriteFile() がエラー
+    }
+
+    SelectObject(hDC, hOldBmp);
+    DeleteObject(hTmpBmp);
+    CloseHandle(hFile);
+    GlobalFree(psBmpInfo);
+    GlobalFree(pBits);
+
+    return TRUE;
+}
+#endif	// OUTPUT_BMP

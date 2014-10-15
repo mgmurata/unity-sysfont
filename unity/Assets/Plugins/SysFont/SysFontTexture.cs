@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2012 Mario Freitas (imkira@gmail.com)
  * 
  * Permission is hereby granted, free of charge, to any person obtaining
@@ -108,7 +108,7 @@ public class SysFontTexture : ISysFontTexturable
   {
     get
     {
-#if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_IPHONE
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN || UNITY_IPHONE
       return AppleFontName;
 #elif UNITY_ANDROID
       return AndroidFontName;
@@ -119,7 +119,7 @@ public class SysFontTexture : ISysFontTexturable
     }
     set
     {
-#if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_IPHONE
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN || UNITY_IPHONE
       AppleFontName = value;
 #elif UNITY_ANDROID
       AndroidFontName = value;
@@ -315,7 +315,9 @@ public class SysFontTexture : ISysFontTexturable
     }
 
     int textureID = _texture.GetNativeTextureID();
-
+#if DEBUG_TEXTURE_ID
+textureID_ = textureID;
+#endif	// DEBUG_TEXTURE_ID
     SysFont.QueueTexture(_text, FontName, _fontSize, _isBold,
         _isItalic, _alignment, _isMultiLine, _maxWidthPixels,
         _maxHeightPixels, textureID);
@@ -336,6 +338,10 @@ public class SysFontTexture : ISysFontTexturable
     _lastIsMultiLine = _isMultiLine;
     _lastMaxWidthPixels = _maxWidthPixels;
     _lastMaxHeightPixels = _maxHeightPixels;
+
+#if DEBUG_TEXTURE_ID
+	count_ ++;
+#endif	// DEBUG_TEXTURE_ID
   }
 
   public void Destroy()
@@ -351,4 +357,19 @@ public class SysFontTexture : ISysFontTexturable
       }
     }
   }
+
+#if DEBUG_TEXTURE_ID
+	int count_;
+	public int getCount(){
+		return count_;
+	}
+	int textureID_;
+	public int getTextureID(){
+		return textureID_;
+	}
+	public Texture getTexture(){
+		return _texture;
+	}
+#endif	// DEBUG_TEXTURE_ID
+	
 }

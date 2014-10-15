@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2012 Mario Freitas (imkira@gmail.com)
  * 
  * Permission is hereby granted, free of charge, to any person obtaining
@@ -34,9 +34,9 @@ public class SysFont : MonoBehaviour
     Right = 2
   }
 
-#if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_IPHONE
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN || UNITY_IPHONE
 
-#if UNITY_EDITOR || UNITY_STANDALONE_OSX
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN
   [DllImport("SysFont")]
 #else
   [DllImport("__Internal")]
@@ -46,42 +46,42 @@ public class SysFont : MonoBehaviour
       Alignment alignment, int maxWidthPixels, int maxHeightPixels,
       int textureID);
 
-#if UNITY_EDITOR || UNITY_STANDALONE_OSX
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN
   [DllImport("SysFont")]
 #else
   [DllImport("__Internal")]
 #endif
   private static extern void _SysFontUpdateQueuedTexture(int textureID);
 
-#if UNITY_EDITOR || UNITY_STANDALONE_OSX
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN
   [DllImport("SysFont")]
 #else
   [DllImport("__Internal")]
 #endif
   private static extern void _SysFontDequeueTexture(int textureID);
 
-#if UNITY_EDITOR || UNITY_STANDALONE_OSX
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN
   [DllImport("SysFont")]
 #else
   [DllImport("__Internal")]
 #endif
   private static extern int _SysFontGetTextureWidth(int textureID);
 
-#if UNITY_EDITOR || UNITY_STANDALONE_OSX
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN
   [DllImport("SysFont")]
 #else
   [DllImport("__Internal")]
 #endif
   private static extern int _SysFontGetTextureHeight(int textureID);
 
-#if UNITY_EDITOR || UNITY_STANDALONE_OSX
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN
   [DllImport("SysFont")]
 #else
   [DllImport("__Internal")]
 #endif
   private static extern int _SysFontGetTextWidth(int textureID);
 
-#if UNITY_EDITOR || UNITY_STANDALONE_OSX
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN
   [DllImport("SysFont")]
 #else
   [DllImport("__Internal")]
@@ -90,7 +90,11 @@ public class SysFont : MonoBehaviour
 
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX
 #else
+#if UNITY_STANDALONE_WIN
+  [DllImport("SysFont")]
+#else	// UNITY_STANDALONE_WIN
   [DllImport("__Internal")]
+#endif	// UNITY_STANDALONE_WIN
   private static extern void _SysFontRender();
 #endif
 
@@ -245,7 +249,7 @@ public class SysFont : MonoBehaviour
   public static void UpdateQueuedTexture(int textureID)
   {
     _SysFontUpdateQueuedTexture(textureID);
-#if UNITY_EDITOR || UNITY_STANDALONE_OSX
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN
     GL.IssuePluginEvent(0);
 #else
     _SysFontRender();

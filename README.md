@@ -171,6 +171,10 @@ I am investigating this problem, and I hope to fix it ASAP.
 * Due to the limitations on the webplayer platform, unity-sysfont may never be
   possible on such platform.
 
+## Supported Windows OpenGL
+
+* Must -force-opengl Command Line Option.(But rendering is very slowly.)
+
 ## Contribute
 
 * Found a bug?

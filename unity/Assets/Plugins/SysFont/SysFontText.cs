@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2012 Mario Freitas (imkira@gmail.com)
  * 
  * Permission is hereby granted, free of charge, to any person obtaining
@@ -447,4 +447,36 @@ public class SysFontText : MonoBehaviour, ISysFontTexturable
     _renderer = null;
   }
   #endregion
+
+
+#if false
+ void OnGUI(){
+/*
+		Rect rect = new Rect( 0, 0, Texture.width * 100, Texture.height * 100 );
+
+		GUI.color = new Color( 1, 1, 1, 1 );
+		GUI.DrawTexture( rect, Texture );
+*/
+
+		GUI.skin.label.margin = new RectOffset(0, 0, 0, 0);
+		GUI.skin.label.padding = new RectOffset(0, 0, 0, 0);
+		GUI.skin.label.border = new RectOffset(0, 0, 0, 0);
+		
+		Texture texture = _material.mainTexture;
+		if(texture != null){
+			Rect rect =  new Rect( transform.localPosition.x + Screen.width / 2, Screen.height / 2 - transform.localPosition.y, texture.width, texture.height );
+			GUI.BeginGroup( rect ) ;
+			GUI.DrawTexture(new Rect( 0, 0, texture.width * TextWidthPixels, texture.height * TextHeightPixels), texture);
+			GUI.EndGroup();
+		}
+
+		GUILayout.BeginArea( new Rect ( transform.localPosition.x + Screen.width / 2, Screen.height / 2 - transform.localPosition.y , 128, 64 ) );
+		GUILayout.Label ( "EventId " + _texture.getTextureID());
+		GUILayout.Label ( "Count   " + _texture.getCount());
+		GUILayout.Label ( "Texture   " + (texture == null ? "null" : (texture.width+"x"+texture.height)));
+		GUILayout.Label ( "Texture Size " + (texture == null ? "null" : (TextWidthPixels+"x"+TextHeightPixels)));
+		
+		GUILayout.EndArea ();
+ }
+#endif	// false
 }
